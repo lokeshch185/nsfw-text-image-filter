@@ -33,5 +33,50 @@ def classify_image():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route("/classify-multiple-images", methods=["POST"])
+def classify_multiple_images():
+    try:
+        if 'images' not in request.files:
+            return jsonify({"error": "No image files provided."}), 400
+
+        images = request.files.getlist("images")
+        results = []
+
+        for image_file in images:
+            image = Image.open(image_file.stream)
+            image_result = image_pipeline(image)
+            results.append(image_result)
+
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/classify-multiple", methods=["POST"])
+def classify_multiple():
+    try:
+        data = request.get_json()
+        if "texts" not in data and "images" not in request.files:
+            return jsonify({"error": "No texts or images provided."}), 400
+
+        results = {"texts": [], "images": []}
+
+        if "texts" in data:
+            texts = data["texts"]
+            for text in texts:
+                text_result = text_pipeline(text)
+                results["texts"].append(text_result)
+
+        if "images" in request.files:
+            images = request.files.getlist("images")
+            for image_file in images:
+                image = Image.open(image_file.stream)
+                image_result = image_pipeline(image)
+                results["images"].append(image_result)
+
+        return jsonify(results)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == "__main__":
     app.run(debug=True)
